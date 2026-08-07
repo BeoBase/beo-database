@@ -1,0 +1,74 @@
+name: Jira Convention Check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+
+concurrency:
+  group: jira-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  jira-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+            
+          echo "Checking branch: $BRANCH"
+          
+          if [[ ! "$BRANCH" =~ BEO-[0-9]+ ]]; then
+            echo "❌ Branch name must contain Jira ticket."
+            echo "Example: feature/BEO-475-add-login"
+            exit 1
+          fi
+            
+          echo "✅ Branch name OK"
+
+      - name: Check commit messages
+        run: |
+          echo "Checking commits..."
+          
+          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --no-merges --pretty=format:"%s")
+            
+          echo "$COMMITS"
+            
+          while IFS= read -r commit
+            do
+              if [[ ! "$commit" =~ ^BEO-[0-9]+:\ .+ ]]; then
+                echo "❌ Invalid commit message:"
+                echo "$commit"
+                echo ""
+                echo "Required format:"
+                echo "BEO-475: your message"
+                exit 1
+              fi
+            done <<< "$COMMITS"
+            
+            echo "✅ Commit messages OK"
+
+      - name: Check PR title
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+
+          echo "Checking PR title: $TITLE"
+
+          if [[ ! "$TITLE" =~ ^BEO-[0-9]+:\ .+ ]]; then
+            echo "❌ PR title must follow Jira format."
+            echo "Example:"
+            echo "BEO-475: add login logic"
+            exit 1
+          fi
+
+          echo "✅ PR title OK"
