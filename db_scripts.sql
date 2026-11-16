@@ -1,13 +1,28 @@
 -- Notes:
--- Spring Boot backend is the source of truth.
--- Database should not define default values.
--- All tables live in the beo_base schema (never in public).
+-- Spring Boot backend is the source of truth. It will handle nanoId and initiate data.
+-- Database should not define default values > BE will take care.
 
--- Schema
+-- Base schema
 CREATE SCHEMA IF NOT EXISTS beo_base;
 
 -- Drop tables if they exist (in correct FK order)
+DROP TABLE IF EXISTS beo_base.apps;
 DROP TABLE IF EXISTS beo_base.users;
+
+-- Apps table
+CREATE TABLE beo_base.apps
+(
+    id         VARCHAR(10) PRIMARY KEY,
+    name       VARCHAR(50) NOT NULL,
+    tags       TEXT[]      NOT NULL,
+    route      TEXT        NOT NULL,
+    route_type VARCHAR(10) NOT NULL,
+
+    CONSTRAINT apps_route_type_check
+        CHECK (route_type IN ('INTERNAL', 'EXTERNAL'))
+);
+CREATE UNIQUE INDEX apps_name_unique
+    ON beo_base.apps (LOWER(name));
 
 -- Users Table
 CREATE TABLE beo_base.users
@@ -28,6 +43,5 @@ CREATE TABLE beo_base.users
                         'ROLE_DEMO'
             ))
 );
-
 CREATE UNIQUE INDEX users_email_unique
     ON beo_base.users (LOWER(email));
