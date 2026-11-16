@@ -21,6 +21,8 @@ CREATE TABLE beo_base.apps
     CONSTRAINT apps_route_type_check
         CHECK (route_type IN ('INTERNAL', 'EXTERNAL'))
 );
+CREATE UNIQUE INDEX apps_name_unique
+    ON beo_base.apps (LOWER(name));
 
 -- Users Table
 CREATE TABLE beo_base.users
